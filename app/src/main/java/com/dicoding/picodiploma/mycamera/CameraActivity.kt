@@ -60,7 +60,9 @@ class CameraActivity : AppCompatActivity() {
                     it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
                 }
 
-            imageCapture = ImageCapture.Builder().build()
+            imageCapture = ImageCapture.Builder()
+                .setTargetRotation(Surface.ROTATION_0)
+                .build()
 
             try {
                 cameraProvider.unbindAll()
@@ -96,22 +98,18 @@ class CameraActivity : AppCompatActivity() {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                         val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, output.savedUri)
 
-                        // Ambil ukuran PreviewView dan ukuran gambar asli
                         val previewView = binding.viewFinder
                         val overlayView = binding.overlay
                         val overlayBounds = overlayView.getOverlayBounds()
 
-                        // Rasio skala antara ukuran PreviewView dan ukuran gambar asli
                         val scaleX = bitmap.width.toFloat() / previewView.width
                         val scaleY = bitmap.height.toFloat() / previewView.height
 
-                        // Hitung koordinat cropping berdasarkan rasio skala
                         val cropLeft = (overlayBounds.left * scaleX).toInt()
                         val cropTop = (overlayBounds.top * scaleY).toInt()
                         val cropWidth = (overlayBounds.width() * scaleX).toInt()
                         val cropHeight = (overlayBounds.height() * scaleY).toInt()
 
-                        // Pastikan koordinat berada dalam batas gambar asli
                         val croppedBitmap = Bitmap.createBitmap(
                             bitmap,
                             cropLeft.coerceAtLeast(0),
@@ -120,13 +118,11 @@ class CameraActivity : AppCompatActivity() {
                             cropHeight.coerceAtMost(bitmap.height - cropTop)
                         )
 
-                        // Simpan gambar yang telah di-crop ke file baru
                         val croppedFile = File(cacheDir, "cropped_image.jpg")
                         val outputStream = FileOutputStream(croppedFile)
                         croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
                         outputStream.close()
 
-                        // Kembalikan URI dari gambar yang di-crop
                         val croppedUri = Uri.fromFile(croppedFile)
 
                         val intent = Intent()
