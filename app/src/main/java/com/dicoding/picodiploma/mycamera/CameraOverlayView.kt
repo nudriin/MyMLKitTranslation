@@ -21,19 +21,19 @@ class CameraOverlayView(context: Context, attrs: AttributeSet) : View(context, a
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val left = width * 0.2f
-        val top = height * 0.3f
-        val right = width * 0.8f
-        val bottom = height * 0.7f
+        val left = width * 0.1f
+        val right = width * 0.9f
+        val top = height * 0.4f
+        val bottom = height * 0.6f
 
         canvas.drawRoundRect(left, top, right, bottom, cornerRadius, cornerRadius, borderPaint)
     }
 
     fun getOverlayBounds(): RectF {
-        val left = width * 0.2f
-        val top = height * 0.3f
-        val right = width * 0.8f
-        val bottom = height * 0.7f
+        val left = width * 0.1f
+        val top = height * 0.4f
+        val right = width * 0.9f
+        val bottom = height * 0.6f
         return RectF(left, top, right, bottom)
     }
 }
