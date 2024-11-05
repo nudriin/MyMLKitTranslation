@@ -12,6 +12,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <com.dicoding.picodiploma.mycamera.CameraOverlayView
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        tools:ignore="InvalidId"
+        />
+
     <ImageView
         android:id="@+id/captureImage"
         android:layout_width="60dp"

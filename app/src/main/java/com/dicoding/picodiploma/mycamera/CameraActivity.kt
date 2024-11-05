@@ -1,8 +1,11 @@
 package com.dicoding.picodiploma.mycamera
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.OrientationEventListener
 import android.view.Surface
@@ -17,6 +20,8 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.dicoding.picodiploma.mycamera.databinding.ActivityCameraBinding
+import java.io.File
+import java.io.FileOutputStream
 
 class CameraActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCameraBinding
@@ -89,10 +94,45 @@ class CameraActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val intent = Intent()
-                    intent.putExtra(EXTRA_CAMERAX_IMAGE, output.savedUri.toString())
-                    setResult(CAMERAX_RESULT, intent)
-                    finish()
+                        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, output.savedUri)
+
+                        // Ambil ukuran PreviewView dan ukuran gambar asli
+                        val previewView = binding.viewFinder
+                        val overlayView = binding.overlay
+                        val overlayBounds = overlayView.getOverlayBounds()
+
+                        // Rasio skala antara ukuran PreviewView dan ukuran gambar asli
+                        val scaleX = bitmap.width.toFloat() / previewView.width
+                        val scaleY = bitmap.height.toFloat() / previewView.height
+
+                        // Hitung koordinat cropping berdasarkan rasio skala
+                        val cropLeft = (overlayBounds.left * scaleX).toInt()
+                        val cropTop = (overlayBounds.top * scaleY).toInt()
+                        val cropWidth = (overlayBounds.width() * scaleX).toInt()
+                        val cropHeight = (overlayBounds.height() * scaleY).toInt()
+
+                        // Pastikan koordinat berada dalam batas gambar asli
+                        val croppedBitmap = Bitmap.createBitmap(
+                            bitmap,
+                            cropLeft.coerceAtLeast(0),
+                            cropTop.coerceAtLeast(0),
+                            cropWidth.coerceAtMost(bitmap.width - cropLeft),
+                            cropHeight.coerceAtMost(bitmap.height - cropTop)
+                        )
+
+                        // Simpan gambar yang telah di-crop ke file baru
+                        val croppedFile = File(cacheDir, "cropped_image.jpg")
+                        val outputStream = FileOutputStream(croppedFile)
+                        croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                        outputStream.close()
+
+                        // Kembalikan URI dari gambar yang di-crop
+                        val croppedUri = Uri.fromFile(croppedFile)
+
+                        val intent = Intent()
+                        intent.putExtra(EXTRA_CAMERAX_IMAGE, croppedUri.toString())
+                        setResult(CAMERAX_RESULT, intent)
+                        finish()
                 }
 
                 override fun onError(exc: ImageCaptureException) {
