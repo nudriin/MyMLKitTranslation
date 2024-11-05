@@ -3,9 +3,14 @@ package com.dicoding.picodiploma.mycamera
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.dicoding.picodiploma.mycamera.databinding.ActivityResultBinding
+import com.google.mlkit.common.model.DownloadConditions
+import com.google.mlkit.nl.translate.TranslateLanguage
+import com.google.mlkit.nl.translate.Translation
+import com.google.mlkit.nl.translate.TranslatorOptions
 
 class ResultActivity : AppCompatActivity() {
 
@@ -26,7 +31,52 @@ class ResultActivity : AppCompatActivity() {
         val detectedText = intent.getStringExtra(EXTRA_RESULT)
         binding.resultText.text = detectedText
 
+        binding.translateButton.setOnClickListener {
+            binding.progressIndicator.visibility = View.VISIBLE
+            translateText(detectedText!!)
+        }
+
     }
+
+    private fun translateText(detectedText: String) {
+        val options = TranslatorOptions.Builder()
+            .setSourceLanguage(TranslateLanguage.ENGLISH)
+            .setTargetLanguage(TranslateLanguage.INDONESIAN)
+            .build()
+
+        val englishToIndonesia = Translation.getClient(options)
+
+        val condition = DownloadConditions.Builder()
+            .requireWifi()
+            .build()
+
+        englishToIndonesia.downloadModelIfNeeded(condition)
+            .addOnSuccessListener {
+                englishToIndonesia.translate(detectedText)
+                    .addOnSuccessListener { translatedText ->
+                        binding.translatedText.text = translatedText
+                        englishToIndonesia.close()
+                        binding.progressIndicator.visibility = View.GONE
+                    }
+                    .addOnFailureListener { exception ->
+                        showToast(exception.message.toString())
+                        print(exception.stackTrace)
+                        englishToIndonesia.close()
+                        binding.progressIndicator.visibility = View.GONE
+                    }
+            }
+            .addOnFailureListener {
+                showToast(getString(R.string.downloading_model_fail))
+                binding.progressIndicator.visibility = View.GONE
+            }
+
+        lifecycle.addObserver(englishToIndonesia)
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
 
     companion object {
         const val EXTRA_IMAGE_URI = "extra_image_uri"
